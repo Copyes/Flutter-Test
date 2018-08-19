@@ -37,8 +37,63 @@ class TimerPageState extends State<TimerPage> {
         ));
   }
 
-  void _handleLeftBtn() {}
-  void _handleRightBtn() {}
+  void _handleRightBtn() {
+    if (_stopwatch.isRunning) {
+      _stopwatch.stop();
+    } else {
+      _stopwatch.start();
+      Timer.periodic(Duration(milliseconds: 10), (interval) {
+        var milSecond,
+            second,
+            minute,
+            countingTime,
+            secmilSecond,
+            secsecond,
+            secminute,
+            seccountingTime;
+        countingTime = _stopwatch.elapsedMilliseconds;
+        minute = (countingTime / (60 * 1000)).floor();
+        second = ((countingTime - 6000 * minute) / 1000).floor();
+        milSecond = ((countingTime % 1000) / 10).floor();
+        seccountingTime = countingTime - _recordTime;
+        secminute = (seccountingTime / (60 * 1000)).floor();
+        secsecond = ((seccountingTime - 6000 * secminute) / 1000).floor();
+        secmilSecond = ((seccountingTime % 1000) / 10).floor();
+
+        setState(() {
+          _totalTime = (minute % 60).toString().padLeft(2, '0') +
+              ":" +
+              (second % 60).toString().padLeft(2, '0') +
+              "." +
+              (milSecond % 60).toString().padLeft(2, '0');
+          _sectionTime = (secminute % 60).toString().padLeft(2, '0') +
+              ":" +
+              (secsecond % 60).toString().padLeft(2, '0') +
+              "." +
+              (secmilSecond % 60).toString().padLeft(2, '0');
+        });
+        if (!_stopwatch.isRunning) {
+          interval.cancel();
+        }
+      });
+    }
+  }
+
+  void _handleLeftBtn() {
+    if (_stopwatch.isRunning) {
+      _recordList.add(_sectionTime);
+      _recordTime = _stopwatch.elapsedMilliseconds;
+    } else {
+      setState(() {
+        _sectionTime = '00:00.00';
+        _totalTime = '00:00.00';
+        _recordList.clear();
+        _recordTime = 0;
+      });
+
+      _stopwatch.reset();
+    }
+  }
 }
 
 // the main part
@@ -51,6 +106,64 @@ class WatchFace extends StatelessWidget {
 
   final String sectionTime;
   final String totalTime;
+  Widget timeBox(BuildContext context, String totalTime, String typeStr) {
+    var totalTimeArr = totalTime.split(new RegExp(r"\D"));
+    var fontSize = (typeStr == 'big') ? 70.0 : 20.0;
+    var width = (typeStr == 'big') ? 92.0 : 28.0;
+    var color = (typeStr == 'big') ? Color(0xFF222222) : Color(0xFF555555);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Container(
+          width: width,
+          child: Text(
+            totalTimeArr[0],
+            style: new TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.w100,
+                color: color,
+                fontFamily: "RobotoMono"),
+          ),
+        ),
+        Container(
+          child: Text(
+            ':',
+            style: new TextStyle(
+                fontSize: fontSize, color: color, fontFamily: "RobotoMono"),
+          ),
+        ),
+        Container(
+          width: width,
+          child: Text(
+            totalTimeArr[1],
+            style: new TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.w100,
+                color: color,
+                fontFamily: "RobotoMono"),
+          ),
+        ),
+        Container(
+          child: Text(
+            '.',
+            style: new TextStyle(
+                fontSize: fontSize, color: color, fontFamily: "RobotoMono"),
+          ),
+        ),
+        Container(
+          width: width,
+          child: Text(
+            totalTimeArr[2],
+            style: new TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.w100,
+                color: color,
+                fontFamily: "RobotoMono"),
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget build(BuildContext context) {
     return Container(
@@ -59,32 +172,11 @@ class WatchFace extends StatelessWidget {
           border: Border(bottom: BorderSide(color: Color(0xFFDDDDDD)))),
       padding: EdgeInsets.only(top: 30.0),
       alignment: Alignment.center,
-      height: 170.0,
+      height: 150.0,
       child: Column(
         children: <Widget>[
-          Container(
-            alignment: Alignment.center,
-            padding: EdgeInsets.only(right: 30.0),
-            child: Text(
-              sectionTime,
-              style: const TextStyle(
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.w100,
-                  color: Color(0xFF555555),
-                  fontFamily: "RobotoMono"),
-            ),
-          ),
-          Container(
-            margin: EdgeInsets.only(top: 30.0),
-            child: Text(
-              totalTime,
-              style: const TextStyle(
-                  fontSize: 70.0,
-                  fontWeight: FontWeight.w100,
-                  color: Color(0xFF222222),
-                  fontFamily: "RobotoMono"),
-            ),
-          )
+          timeBox(context, sectionTime, 'small'),
+          timeBox(context, totalTime, 'big'),
         ],
       ),
     );
@@ -128,6 +220,8 @@ class WatchControlState extends State<WatchControl> {
         underlayColor = Color(0xFFEEEEEE);
       });
     }
+
+    widget.onRightBtn();
   }
 
   @override
@@ -173,6 +267,7 @@ class WatchControlState extends State<WatchControl> {
   }
 }
 
+// the record list part
 class WatchRecord extends StatelessWidget {
   WatchRecord({Key key, this.recordList}) : super(key: key);
   final List<String> recordList;
