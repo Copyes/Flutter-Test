@@ -18,7 +18,13 @@ class HomePage extends StatelessWidget {
               builder: (BuildContext context) => nextPage));
         },
         child: Center(
-          child: Column(),
+          child: new Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              icon,
+              Container(margin: EdgeInsets.only(top: 10.0), child: Text(title))
+            ],
+          ),
         ),
       ),
     );
